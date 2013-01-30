@@ -5,6 +5,20 @@ namespace N98\Util;
 class Filesystem
 {
     /**
+     * get the current directory
+     */
+    public function getPwd()
+    {
+        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $folder = exec('@echo %cd%'); // @TODO not currently tested!!!
+        } else {
+            $folder = exec('pwd');
+        }
+
+        return $folder;
+    }
+
+    /**
      * @param string $src
      * @param string $dst
      * @param array  $blacklist

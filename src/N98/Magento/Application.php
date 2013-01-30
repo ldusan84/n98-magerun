@@ -69,10 +69,13 @@ use N98\Magento\Command\System\Website\ListCommand as SystemWebsiteListCommand;
 use N98\Util\Console\Helper\ParameterHelper;
 use N98\Util\OperatingSystem;
 use N98\Util\String;
+use N98\Util\Filesystem;
 use Symfony\Component\Console\Application as BaseApplication;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArgvInput;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputDefinition;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Finder\Finder;
@@ -141,9 +144,11 @@ class Application extends BaseApplication
         // Suppress DateTime warnings
         date_default_timezone_set(@date_default_timezone_get());
 
+
+        $configLoader = new ConfigurationLoader();
         $this->detectMagento();
 
-        $configLoader = new ConfigurationLoader($this->_magentoRootFolder);
+        $configLoader->addProjectConfig($this->_magentoRootFolder);
         $this->config = $configLoader->toArray();
 
         $this->registerHelpers();
@@ -237,16 +242,12 @@ class Application extends BaseApplication
     /**
      * Search for magento root folder
      *
-     * @param OutputInterface $output
      * @param bool $silent print debug messages
      */
-    public function detectMagento()
+    public function detectMagento($directory = null)
     {
-        if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-            $folder = exec('@echo %cd%'); // @TODO not currently tested!!!
-        } else {
-            $folder = exec('pwd');
-        }
+        $fs = new Filesystem();
+        $folder = $fs->getPwd();
 
         $folders = array();
         $folderParts = explode(DIRECTORY_SEPARATOR, $folder);
@@ -465,5 +466,21 @@ class Application extends BaseApplication
             return $input;
         }
         return $input;
+    }
+
+
+    /**
+     * Adds the magento directory option to all.
+     *
+     * @return InputDefinition An InputDefinition instance
+     */
+    protected function getDefaultInputDefinition()
+    {
+        $def = parent::getDefaultInputDefinition();
+        $def->addOption(
+            new InputOption('--dir', '-d', InputOption::VALUE_REQUIRED, 'Manually set Magento directory. (Example: --dir=/foo/bar)')
+        );
+
+        return $def;
     }
 }
